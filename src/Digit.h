@@ -6,10 +6,15 @@ class Digit
 {
     public:
         Digit ();
+        Digit (ofVec2f);
         ~Digit ();
 
-        void setup();
+        void draw ();
+        void setStatus (bool);
+        void setStatus (char);
+        void setPosition (ofVec2f);
 
     private:
-        /* data */
+        ofVec2f position;
+        bool isOn;
 };
