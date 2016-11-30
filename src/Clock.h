@@ -1,17 +1,19 @@
-#ifndef CLOCK_H
-#define CLOCK_H
+#ifndef _CLOCK_H
+#define _CLOCK_H
 
 #include <string>
+//#include <array>
 #include <iostream>
+#include <algorithm>
 #include "ofMain.h"
 #include "Digit.h"
 
-//enum Clock_Mode {
-    //CMode_Normal  = 0x1,
-    //CMode_Verbose = 0x2, // display info, numbers, arithmetic symbols
-    //CMode_Columns = 0x4, // sort digits in three columns
-    //CMode_Digits  = 0x8, // sort digits in six cols
-//};
+struct matrix {
+    string format;
+    int width;
+    int height;
+    int numActive;
+};
 
 class Clock
 {
@@ -21,16 +23,33 @@ class Clock
 
         void setup ();
         void update ();
+        //void updateTime (); ???
+        void updateMatrix ();
         void draw ();
 
-        string toBinary (int);
+        void toggleVerbosity ();
+        void toggleConversion ();
+        void toggleFormat ();
+        string toBinaryStr (unsigned int, const unsigned int = 0);
 
     private:
+        unsigned int currTime;
+        unsigned int lastTime;
         int h, m, s;
+
+        //string matrix;
+        matrix mtxDigits;
+        matrix mtxNumber;
+        //unsigned int matrixWidth;
+        //unsigned int matrixHeight;
+        //unsigned int maxDigits;
         vector<Digit> digits;
+        vector<Digit*> digits_ptr;
+        //vector<string> digits_bin;
 
         bool bVerbose;
-        bool bSingleColumn;
+        bool bConvByDigits;
+        bool b24Hours;
 
         ofVec2f position;
         ofColor textColor;

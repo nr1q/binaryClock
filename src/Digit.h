@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _DIGIT_H
+#define _DIGIT_H
 
 #include "ofMain.h"
 
@@ -18,3 +19,5 @@ class Digit
         ofVec2f position;
         bool isOn;
 };
+
+#endif /* ifndef _DIGIT_H */
