@@ -5,13 +5,13 @@ Clock::Clock ()
     s = 0;
     m = 0;
     h = 0;
-    lastTime = 0;
     currTime = 0;
     bVerbose = false;
     b24Hours = false;
     bConvByDigits = true;
 
-    // Splitted and rotated and reversed matrix format:
+    // Matrices are read from top to bottom and left to right
+    //
     //  0  1  1<--number
     //  1  1  1
     //  1  1  1  |  01 01 01<--digits
@@ -49,72 +49,61 @@ void Clock::setup ()
 //--------------------------------------------------------------
 void Clock::update ()
 {
-    //int i;
-    //string bsu, bsd, bmu, bmd, bhu, bhd;
-
     lastTime = currTime;
     currTime = ofGetElapsedTimeMillis() / 1000;
 
-    if (currTime != lastTime) {
-        updateMatrix();
-    }
+    updateMatrix();
 
     s = ofGetSeconds();
     m = ofGetMinutes();
-    h = b24Hours ? ofGetHours() : ofGetHours() % 12;
+    h = ofGetHours();
 
-    //bsu = toBinaryStr( s % 10 );
-    //bsd = toBinaryStr( s / 10 );
-    //bmu = toBinaryStr( m % 10 );
-    //bmd = toBinaryStr( m / 10 );
-    //bhu = toBinaryStr( h % 10 );
-    //bhd = toBinaryStr( h / 10 );
+    // fix the time for 12-hour format
+    if (! b24Hours) {
+        h = (0 == h || 12 == h) ? 12 : h % 12;
+    }
 
-    //reverse( begin(bsu), end(bsu) );
-    //reverse( begin(bsd), end(bsd) );
-    //reverse( begin(bmu), end(bmu) );
-    //reverse( begin(bmd), end(bmd) );
-    //reverse( begin(bhu), end(bhu) );
-    //reverse( begin(bhd), end(bhd) );
+    newStatus = "";
+    unsigned int padding = bConvByDigits ? mtxDigits.height : mtxNumber.height;
 
-    //i = digits.size() - 1;
-    //for (char & c : bsu) {
-        //if (bsu == "0") digits.at(16).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
-    //}
-    //i = 15;
-    //for (char & c : bsd) {
-        //if (bsd == "0") digits.at(13).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
+    if (bConvByDigits) {
+        newStatus += toBinaryStr( h/10, padding-2);
+        newStatus += toBinaryStr( h%10, padding );
+        newStatus += toBinaryStr( m/10, padding-1 );
+        newStatus += toBinaryStr( m%10, padding );
+        newStatus += toBinaryStr( s/10, padding-1 );
+        newStatus += toBinaryStr( s%10, padding );
+    } else {
+        newStatus += toBinaryStr( h, padding-1 );
+        newStatus += toBinaryStr( m, padding );
+        newStatus += toBinaryStr( s, padding );
+    }
+
+    //if (currTime != lastTime) {
+        //std::cout << newStatus << std::endl;
     //}
 
-    //i = 12;
-    //for (char & c : bmu) {
-        //if (bmu == "0") digits.at(9).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
-    //}
-    //i = 8;
-    //for (char & c : bmd) {
-        //if (bmd == "0") digits.at(6).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
-    //}
+    if (newStatus.length() == digits_ptr.size()) {
+        for (int i = 0; i < digits_ptr.size(); ++i) {
+            digits_ptr.at(i)->setStatus( newStatus.at(i) );
+        }
+    }
 
-    //i = 5;
-    //for (char & c : bhu) {
-        //if (bhu == "0") digits.at(2).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
-    //}
-    //i = 1;
-    //for (char & c : bhd) {
-        //if (bhd == "0") digits.at(0).setStatus('0');
-        //digits.at(i).setStatus(c);
-        //--i;
-    //}
+    // Map of the increments form 0 to 60
+    //                                 x............................
+    //                 x...............................x............
+    //         x...............x...............x...............x....
+    //     x.......x.......x.......x.......x.......x.......x.......x
+    //   x...x...x...x...x...x...x...x...x...x...x...x...x...x...x..
+    // .x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.
+    //
+    //                                 11111111111111111111111111111
+    //                 1111111111111111................1111111111111
+    //         11111111........11111111........11111111........11111
+    //     1111....1111....1111....1111....1111....1111....1111....1
+    //   11..11..11..11..11..11..11..11..11..11..11..11..11..11..11.
+    // .1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.
+
 }
 
 //--------------------------------------------------------------
@@ -145,14 +134,6 @@ void Clock::updateMatrix ()
         updateDigits = true;
     }
 
-    // Map of the increments
-    //                              32->x............................
-    //              16->x...............................x............
-    //       8->x...............x...............x...............x....
-    //   4->x.......x.......x.......x.......x.......x.......x.......x
-    // 2->x...x...x...x...x...x...x...x...x...x...x...x...x...x...x..
-    //1->x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.
-
     if (updateDigits) {
         size_t idxDigit = 0;
         size_t matrixWidth  = bConvByDigits ? mtxDigits.width : mtxNumber.width;
@@ -181,10 +162,6 @@ void Clock::draw ()
 
     ofBackground(0);
     ofSetColor(255);
-
-    //for (size_t i = 0; i < digits.size(); ++i) {
-        //digits[i].draw();
-    //}
 
     for (size_t i = 0; i < digits_ptr.size(); ++i) {
         digits_ptr[i]->draw();

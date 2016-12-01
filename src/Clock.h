@@ -37,9 +37,9 @@ class Clock
         unsigned int lastTime;
         int h, m, s;
 
-        //string matrix;
         matrix mtxDigits;
         matrix mtxNumber;
+        string newStatus;
         //unsigned int matrixWidth;
         //unsigned int matrixHeight;
         //unsigned int maxDigits;
