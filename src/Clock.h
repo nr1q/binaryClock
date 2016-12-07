@@ -1,18 +1,16 @@
-#ifndef _CLOCK_H
-#define _CLOCK_H
+#pragma once
 
 #include <string>
-//#include <array>
 #include <iostream>
 #include <algorithm>
 #include "ofMain.h"
 #include "Digit.h"
 
-struct matrix {
+struct Matrix {
     string format;
     int width;
     int height;
-    int numActive;
+    int numOnes;
 };
 
 class Clock
@@ -23,8 +21,8 @@ class Clock
 
         void setup ();
         void update ();
-        //void updateTime (); ???
         void updateMatrix ();
+        void updatePosition ();
         void draw ();
 
         void toggleVerbosity ();
@@ -33,19 +31,28 @@ class Clock
         string toBinaryStr (unsigned int, const unsigned int = 0);
 
     private:
-        unsigned int currTime;
-        unsigned int lastTime;
-        int h, m, s;
+        unsigned int currTime, lastTime;
+        unsigned int h, m, s;
 
-        matrix mtxDigits;
-        matrix mtxNumber;
-        string newStatus;
-        //unsigned int matrixWidth;
-        //unsigned int matrixHeight;
-        //unsigned int maxDigits;
+        // Matrices are read from top to bottom and left to right
+        //
+        //  0  1  1<--number
+        //  1  1  1
+        //  1  1  1  |  01 01 01<--digits
+        //  1  1  1  |  01 11 11
+        //  1  1  1  |  11 11 11
+        //  1  1  1  |  11 11 11
+        //  h  m  s  |  hh mm ss
+
+        Matrix mtxNumber {"011111111111111111",3,6,17};
+        Matrix mtxDigits {"001111110111111101111111",6,4,20};
+        Matrix mtxCurrent;
+
+        string newStatus, oldStatus;
+        unsigned int digitSize, digitPadding;
         vector<Digit> digits;
         vector<Digit*> digits_ptr;
-        //vector<string> digits_bin;
+        //vector<string> digits_bin; // this might help for calculating increments
 
         bool bVerbose;
         bool bConvByDigits;
@@ -55,5 +62,3 @@ class Clock
         ofColor textColor;
         ofTrueTypeFont font;
 };
-
-#endif /* ifndef CLOCK_H */

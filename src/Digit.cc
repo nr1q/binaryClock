@@ -4,6 +4,7 @@
 Digit::Digit () : isOn(false)
 {
     position.set(0, 0);
+    size = 0;
 }
 
 //--------------------------------------------------------------
@@ -25,7 +26,7 @@ void Digit::draw ()
     else
         ofNoFill();
 
-    ofDrawRectangle(position, 50, 50);
+    ofDrawRectangle(position, size, size);
 }
 
 //--------------------------------------------------------------
@@ -44,4 +45,10 @@ void Digit::setStatus (char _charBin)
 void Digit::setPosition (ofVec2f _pos)
 {
     position.set( _pos );
+}
+
+//--------------------------------------------------------------
+void Digit::setSize (unsigned int _size)
+{
+    size = _size;
 }

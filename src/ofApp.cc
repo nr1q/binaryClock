@@ -32,6 +32,9 @@ void ofApp::keyPressed(int key)
 {
     switch (key) {
         case 102: // f
+            ofToggleFullscreen();
+            break;
+        case 104: // h
             binClock.toggleFormat();
             break;
         case 99: // c

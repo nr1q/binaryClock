@@ -1,5 +1,4 @@
-#ifndef _DIGIT_H
-#define _DIGIT_H
+#pragma once
 
 #include "ofMain.h"
 
@@ -14,10 +13,10 @@ class Digit
         void setStatus (bool);
         void setStatus (char);
         void setPosition (ofVec2f);
+        void setSize (unsigned int);
 
     private:
-        ofVec2f position;
         bool isOn;
+        ofVec2f position;
+        unsigned int size;
 };
-
-#endif /* ifndef _DIGIT_H */

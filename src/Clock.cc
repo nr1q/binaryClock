@@ -6,27 +6,11 @@ Clock::Clock ()
     m = 0;
     h = 0;
     currTime = 0;
+    digitSize = 50;
+    digitPadding = 15;
     bVerbose = false;
     b24Hours = false;
     bConvByDigits = true;
-
-    // Matrices are read from top to bottom and left to right
-    //
-    //  0  1  1<--number
-    //  1  1  1
-    //  1  1  1  |  01 01 01<--digits
-    //  1  1  1  |  01 11 11
-    //  1  1  1  |  11 11 11
-    //  1  1  1  |  11 11 11
-    //  h  m  s  |  hh mm ss
-    mtxNumber.format = "011111111111111111";
-    mtxNumber.width = 3;
-    mtxNumber.height = 6;
-    mtxNumber.numActive = count(mtxNumber.format.begin(), mtxNumber.format.end(), '1');
-    mtxDigits.format = "001111110111111101111111";
-    mtxDigits.width = 6;
-    mtxDigits.height = 4;
-    mtxDigits.numActive = count(mtxDigits.format.begin(), mtxDigits.format.end(), '1');
 }
 
 Clock::~Clock()
@@ -39,32 +23,24 @@ Clock::~Clock()
 //--------------------------------------------------------------
 void Clock::setup ()
 {
-    position.set(80, 100);
     textColor.setHex(0xffffff);
     font.load("font/andalemono.ttf", 20);
-
-    updateMatrix();
 }
 
 //--------------------------------------------------------------
 void Clock::update ()
 {
-    lastTime = currTime;
-    currTime = ofGetElapsedTimeMillis() / 1000;
-
-    updateMatrix();
-
     s = ofGetSeconds();
     m = ofGetMinutes();
     h = ofGetHours();
 
-    // fix the time for 12-hour format
-    if (! b24Hours) {
-        h = (0 == h || 12 == h) ? 12 : h % 12;
+    if (!b24Hours) {
+        h = (0==h || 12==h) ? 12 : h%12;
     }
 
     newStatus = "";
-    unsigned int padding = bConvByDigits ? mtxDigits.height : mtxNumber.height;
+    mtxCurrent = bConvByDigits ? mtxDigits : mtxNumber;
+    unsigned int padding = mtxCurrent.height;
 
     if (bConvByDigits) {
         newStatus += toBinaryStr( h/10, padding-2);
@@ -79,17 +55,18 @@ void Clock::update ()
         newStatus += toBinaryStr( s, padding );
     }
 
-    //if (currTime != lastTime) {
-        //std::cout << newStatus << std::endl;
-    //}
+    // keep the clock centered
+    position.set(
+            (ofGetWidth() - (mtxCurrent.width*(digitSize+digitPadding)) + digitPadding)*0.45,
+            (ofGetHeight() - (mtxCurrent.height*(digitSize+digitPadding)) + digitPadding)*0.35);
 
     if (newStatus.length() == digits_ptr.size()) {
-        for (int i = 0; i < digits_ptr.size(); ++i) {
+        for (size_t i = 0; i < digits_ptr.size(); ++i) {
             digits_ptr.at(i)->setStatus( newStatus.at(i) );
         }
     }
 
-    // Map of the increments form 0 to 60
+    // Map of the increments from 0 to 60
     //                                 x............................
     //                 x...............................x............
     //         x...............x...............x...............x....
@@ -103,7 +80,16 @@ void Clock::update ()
     //     1111....1111....1111....1111....1111....1111....1111....1
     //   11..11..11..11..11..11..11..11..11..11..11..11..11..11..11.
     // .1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.
+    // 0112122312232334122323342334344512232334233434452334344534454
 
+    //lastTime = currTime;
+    //currTime = ofGetElapsedTimeMillis() / 1000;
+
+    //if (currTime != lastTime) {
+        //std::cout << newStatus << std::endl;
+    //}
+
+    updateMatrix();
 }
 
 //--------------------------------------------------------------
@@ -113,16 +99,7 @@ void Clock::update ()
  */
 void Clock::updateMatrix ()
 {
-    bool updateDigits = false;
-    size_t digitsCount  = bConvByDigits ? mtxDigits.numActive : mtxNumber.numActive;
-
-    if (0 == digits_ptr.size()) {
-        for (size_t i = 0; i < digitsCount; ++i) {
-            digits_ptr.push_back( new Digit() );
-        }
-        updateDigits = true;
-    }
-
+    size_t digitsCount = mtxCurrent.numOnes;
 
     if (digits_ptr.size() != digitsCount) {
         while (digits_ptr.size() < digitsCount) {
@@ -131,25 +108,32 @@ void Clock::updateMatrix ()
         while (digits_ptr.size() > digitsCount) {
             digits_ptr.pop_back();
         }
-        updateDigits = true;
     }
 
-    if (updateDigits) {
-        size_t idxDigit = 0;
-        size_t matrixWidth  = bConvByDigits ? mtxDigits.width : mtxNumber.width;
-        size_t matrixHeight = bConvByDigits ? mtxDigits.height : mtxNumber.height;
-        string matrix = bConvByDigits ? mtxDigits.format : mtxNumber.format;
+    updatePosition();
+}
 
-        for (size_t i = 0; i < matrixWidth; ++i) {
-            for (size_t j = 0; j < matrixHeight; ++j) {
-                if ('0' == matrix.at(i*matrixHeight+j)) {
-                    continue;
-                }
+/**
+ * Update the digits position
+ */
+void Clock::updatePosition ()
+{
+    ofVec2f newPosition(0, 0);
+    unsigned int idxDigit = 0;
+    unsigned int size = digitSize + digitPadding;
 
-                digits_ptr.at( idxDigit )->setPosition( ofVec2f(i*100, j*100) );
-
-                ++idxDigit;
+    for (int i = 0; i < mtxCurrent.width; ++i) {
+        for (int j = 0; j < mtxCurrent.height; ++j) {
+            if ('0' == mtxCurrent.format.at(i*mtxCurrent.height+j)) {
+                continue;
             }
+
+            newPosition.set(position.x+i*size, position.y+j*size);
+
+            digits_ptr.at( idxDigit )->setSize( 50 );
+            digits_ptr.at( idxDigit )->setPosition( newPosition );
+
+            ++idxDigit;
         }
     }
 }
@@ -158,11 +142,12 @@ void Clock::updateMatrix ()
 void Clock::draw ()
 {
     char theTime[50];
-    unsigned int padding;
 
     ofBackground(0);
     ofSetColor(255);
 
+    //ofPushMatrix();
+    //ofPopMatrix();
     for (size_t i = 0; i < digits_ptr.size(); ++i) {
         digits_ptr[i]->draw();
     }
@@ -171,9 +156,9 @@ void Clock::draw ()
         ofSetColor( textColor );
 
         sprintf(theTime, "sexagesimal: %02d:%02d:%02d", h, m, s);
-        font.drawString( theTime, position.x, position.y );
+        font.drawString( theTime, 20, ofGetHeight()-60 );
 
-        padding = bConvByDigits ? mtxDigits.height : mtxNumber.height;
+        unsigned int padding = mtxCurrent.height;
 
         if (bConvByDigits) {
             sprintf(theTime, "binary: %s %s:%s %s:%s %s",
@@ -183,13 +168,13 @@ void Clock::draw ()
                     toBinaryStr( m%10, padding ).c_str(),
                     toBinaryStr( s/10, padding ).c_str(),
                     toBinaryStr( s%10, padding ).c_str());
-            font.drawString( theTime, position.x, position.y+60 );
+            font.drawString( theTime, 20, ofGetHeight()-25 );
         } else {
             sprintf(theTime, "binary: %s:%s:%s",
                     toBinaryStr( h, padding ).c_str(),
                     toBinaryStr( m, padding ).c_str(),
                     toBinaryStr( s, padding ).c_str());
-            font.drawString( theTime, position.x, position.y+60 );
+            font.drawString( theTime, 20, ofGetHeight()-25 );
         }
     }
 }
