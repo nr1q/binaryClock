@@ -40,13 +40,15 @@ void Clock::update ()
 
     lastTime = currTime;
     currTime = ofGetElapsedTimeMillis() / 1000;
+
     oldBinaryTime = binaryTime;
     binaryTime = "";
+
     mtxCurrent = bConvByDigits ? mtxDigits : mtxNumber;
     unsigned int padding = mtxCurrent.height;
 
     if (bConvByDigits) {
-        binaryTime += toBinaryStr( h/10, padding-2);
+        binaryTime += toBinaryStr( h/10, padding-2 );
         binaryTime += toBinaryStr( h%10, padding );
         binaryTime += toBinaryStr( m/10, padding-1 );
         binaryTime += toBinaryStr( m%10, padding );
@@ -58,7 +60,6 @@ void Clock::update ()
         binaryTime += toBinaryStr( s, padding );
     }
 
-    // keep the clock centered
     position.set(
             (ofGetWidth() - (mtxCurrent.width*(digitSize+digitPadding)) + digitPadding)*0.45,
             (ofGetHeight() - (mtxCurrent.height*(digitSize+digitPadding)) + digitPadding)*0.35);
@@ -92,6 +93,7 @@ void Clock::updateMatrix ()
  */
 void Clock::updateDigits ()
 {
+    char c;
     ofVec2f newPosition(0, 0);
     unsigned int index = 0;
     unsigned int size = digitSize + digitPadding;
@@ -111,8 +113,19 @@ void Clock::updateDigits ()
     //   11..11..11..11..11..11..11..11..11..11..11..11..11..11..11.
     // .1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.
     // 0112122312232334122323342334344512232334233434452334344534454
+    if (binaryTime != oldBinaryTime &&
+        binaryTime.length() == oldBinaryTime.length()
+        ) {
+        increments = binaryTime;
 
-    if (currTime != lastTime &&
+        for (size_t i = 0; i < increments.size(); ++i) {
+            increments.at(i) = (oldBinaryTime.at(i) == '0' &&
+                                binaryTime.at(i) == '1') ? '1' : '0';
+        }
+        std::cout << increments << std::endl;
+    }
+
+    if (binaryTime != oldBinaryTime &&
         binaryTime.length() == digits_ptr.size()
        ) {
         for (size_t i = 0; i < digits_ptr.size(); ++i) {
@@ -122,7 +135,8 @@ void Clock::updateDigits ()
 
     for (int i = 0; i < mtxCurrent.width; ++i) {
         for (int j = 0; j < mtxCurrent.height; ++j) {
-            if ('0' == mtxCurrent.format.at(i*mtxCurrent.height+j)) {
+            c = mtxCurrent.format.at(i*mtxCurrent.height+j);
+            if ('0' == c) {
                 continue;
             }
 

@@ -48,11 +48,11 @@ class Clock
         Matrix mtxDigits {"001111110111111101111111",6,4,20};
         Matrix mtxCurrent;
 
-        string binaryTime, oldBinaryTime;
+        string binaryTime, oldBinaryTime, increments;
         unsigned int digitSize, digitPadding;
         vector<Digit> digits;
         vector<Digit*> digits_ptr;
-        vector<string> digits_bin;
+        //vector<string> digits_bin;
 
         bool bVerbose;
         bool bConvByDigits;
