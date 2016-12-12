@@ -22,7 +22,7 @@ class Clock
         void setup ();
         void update ();
         void updateMatrix ();
-        void updatePosition ();
+        void updateDigits ();
         void draw ();
 
         void toggleVerbosity ();
@@ -48,11 +48,11 @@ class Clock
         Matrix mtxDigits {"001111110111111101111111",6,4,20};
         Matrix mtxCurrent;
 
-        string newStatus, oldStatus;
+        string binaryTime, oldBinaryTime;
         unsigned int digitSize, digitPadding;
         vector<Digit> digits;
         vector<Digit*> digits_ptr;
-        //vector<string> digits_bin; // this might help for calculating increments
+        vector<string> digits_bin;
 
         bool bVerbose;
         bool bConvByDigits;

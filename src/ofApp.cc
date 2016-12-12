@@ -4,8 +4,8 @@
 void ofApp::setup()
 {
     ofNoFill();
-    //ofSetFrameRate(60);
-    ofSetFrameRate(24);
+    ofSetFrameRate(60);
+    //ofSetFrameRate(24);
 
     //ofDisableAntiAliasing();
 
@@ -54,7 +54,7 @@ void ofApp::keyReleased(int key)
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y )
+void ofApp::mouseMoved(int x, int y)
 {
 
 }

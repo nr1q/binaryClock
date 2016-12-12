@@ -15,7 +15,7 @@ Clock::Clock ()
 
 Clock::~Clock()
 {
-    for (size_t i = 0; i < digits_ptr.size(); i++) {
+    for (size_t i = 0; i < digits_ptr.size(); ++i) {
         delete digits_ptr[i];
     }
 }
@@ -38,21 +38,24 @@ void Clock::update ()
         h = (0==h || 12==h) ? 12 : h%12;
     }
 
-    newStatus = "";
+    lastTime = currTime;
+    currTime = ofGetElapsedTimeMillis() / 1000;
+    oldBinaryTime = binaryTime;
+    binaryTime = "";
     mtxCurrent = bConvByDigits ? mtxDigits : mtxNumber;
     unsigned int padding = mtxCurrent.height;
 
     if (bConvByDigits) {
-        newStatus += toBinaryStr( h/10, padding-2);
-        newStatus += toBinaryStr( h%10, padding );
-        newStatus += toBinaryStr( m/10, padding-1 );
-        newStatus += toBinaryStr( m%10, padding );
-        newStatus += toBinaryStr( s/10, padding-1 );
-        newStatus += toBinaryStr( s%10, padding );
+        binaryTime += toBinaryStr( h/10, padding-2);
+        binaryTime += toBinaryStr( h%10, padding );
+        binaryTime += toBinaryStr( m/10, padding-1 );
+        binaryTime += toBinaryStr( m%10, padding );
+        binaryTime += toBinaryStr( s/10, padding-1 );
+        binaryTime += toBinaryStr( s%10, padding );
     } else {
-        newStatus += toBinaryStr( h, padding-1 );
-        newStatus += toBinaryStr( m, padding );
-        newStatus += toBinaryStr( s, padding );
+        binaryTime += toBinaryStr( h, padding-1 );
+        binaryTime += toBinaryStr( m, padding );
+        binaryTime += toBinaryStr( s, padding );
     }
 
     // keep the clock centered
@@ -60,11 +63,38 @@ void Clock::update ()
             (ofGetWidth() - (mtxCurrent.width*(digitSize+digitPadding)) + digitPadding)*0.45,
             (ofGetHeight() - (mtxCurrent.height*(digitSize+digitPadding)) + digitPadding)*0.35);
 
-    if (newStatus.length() == digits_ptr.size()) {
-        for (size_t i = 0; i < digits_ptr.size(); ++i) {
-            digits_ptr.at(i)->setStatus( newStatus.at(i) );
+    updateMatrix();
+}
+
+//--------------------------------------------------------------
+
+/**
+ * Update of the matrix array, depending on the time format
+ */
+void Clock::updateMatrix ()
+{
+    size_t digitsCount = mtxCurrent.numOnes;
+
+    if (digits_ptr.size() != digitsCount) {
+        while (digits_ptr.size() < digitsCount) {
+            digits_ptr.push_back( new Digit(digitSize) );
+        }
+        while (digits_ptr.size() > digitsCount) {
+            digits_ptr.pop_back();
         }
     }
+
+    updateDigits();
+}
+
+/**
+ * Update the digits position based on time format
+ */
+void Clock::updateDigits ()
+{
+    ofVec2f newPosition(0, 0);
+    unsigned int index = 0;
+    unsigned int size = digitSize + digitPadding;
 
     // Map of the increments from 0 to 60
     //                                 x............................
@@ -82,45 +112,13 @@ void Clock::update ()
     // .1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.
     // 0112122312232334122323342334344512232334233434452334344534454
 
-    //lastTime = currTime;
-    //currTime = ofGetElapsedTimeMillis() / 1000;
-
-    //if (currTime != lastTime) {
-        //std::cout << newStatus << std::endl;
-    //}
-
-    updateMatrix();
-}
-
-//--------------------------------------------------------------
-
-/**
- * Update of the matrix array, depending on the hours format
- */
-void Clock::updateMatrix ()
-{
-    size_t digitsCount = mtxCurrent.numOnes;
-
-    if (digits_ptr.size() != digitsCount) {
-        while (digits_ptr.size() < digitsCount) {
-            digits_ptr.push_back( new Digit() );
-        }
-        while (digits_ptr.size() > digitsCount) {
-            digits_ptr.pop_back();
+    if (currTime != lastTime &&
+        binaryTime.length() == digits_ptr.size()
+       ) {
+        for (size_t i = 0; i < digits_ptr.size(); ++i) {
+            digits_ptr.at(i)->setStatus( binaryTime.at(i) );
         }
     }
-
-    updatePosition();
-}
-
-/**
- * Update the digits position
- */
-void Clock::updatePosition ()
-{
-    ofVec2f newPosition(0, 0);
-    unsigned int idxDigit = 0;
-    unsigned int size = digitSize + digitPadding;
 
     for (int i = 0; i < mtxCurrent.width; ++i) {
         for (int j = 0; j < mtxCurrent.height; ++j) {
@@ -130,10 +128,10 @@ void Clock::updatePosition ()
 
             newPosition.set(position.x+i*size, position.y+j*size);
 
-            digits_ptr.at( idxDigit )->setSize( 50 );
-            digits_ptr.at( idxDigit )->setPosition( newPosition );
+            digits_ptr.at( index )->update();
+            digits_ptr.at( index )->setPosition( newPosition );
 
-            ++idxDigit;
+            ++index;
         }
     }
 }
@@ -144,7 +142,7 @@ void Clock::draw ()
     char theTime[50];
 
     ofBackground(0);
-    ofSetColor(255);
+    //ofSetColor(255);
 
     //ofPushMatrix();
     //ofPopMatrix();
